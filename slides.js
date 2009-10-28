@@ -1,5 +1,6 @@
 /* slides.js, version 0.2
  * October 28, 2009 Jon Suderman
+ * http://github.com/suderman/slides
  *--------------------------------------------------------------------------*/
 var Slides = Class.create({
   container     : null,
@@ -80,12 +81,6 @@ var Slides = Class.create({
     if (this.slides.length < 2) { 
       return false 
     }
-
-    // // Force the max-height as the actual height so the slide container doesn't collapse
-    // var max_height = $$("#venue_gallery .mask").first().getStyle('max-height')
-    // if (max_height) {
-    //      $$("#venue_gallery .mask, #venue_gallery ul.slides").invoke('setStyle',{height:max_height})
-    //    }
 
     // Get thumbs ul and unhide it (it's only useful with JS)
     var thumbs_ul = $$(this.options.container +' '+ this.options.thumbs_container).first()
