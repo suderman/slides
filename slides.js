@@ -1,5 +1,5 @@
-/* slides.js, version 0.1
- * October 21, 2009 Jon Suderman
+/* slides.js, version 0.2
+ * October 28, 2009 Jon Suderman
  *--------------------------------------------------------------------------*/
 var Slides = Class.create({
   container     : null,
@@ -24,23 +24,25 @@ var Slides = Class.create({
     })
 
     // Override default options
-    this.options = Object.extend({
-      delay               : 8000, // Speed of slideshow
-      container           : '', // eg: #masthead
+    this.options = Object.extend({      
+      container           : '',                                   // eg: #masthead
       slides_container    : 'ul.slides',
       thumbs_container    : 'ul.thumbs',
       thumb_active        : 'opacity:0.5',
       thumb_hover         : 'opacity:0.7',
       thumb_inactive      : 'opacity:1.0',
-      thumb_morph_options : { duration: 0.6 }
-    }, arg_options || {});     
+      thumb_morph_options : { duration: 0.6 },
+      before_transition   : function(current_slide,next_slide){}, // Override with custom function
+      after_transition    : function(current_slide,next_slide){}, // Override with custom function
+      delay               : 8000                                  // Speed of slideshow
+    }, arg_options || {})
     
     // If the container was specifically set
     this.options.container = (arg_container) ? arg_container : this.options.container
 
     if ((!this.options.container) && (!this.options.slides_container)) {
-      throw("slides.js requires selector for #container or for #slides_container");
-      return false;
+      throw("slides.js requires selector for #container or for #slides_container")
+      return false
     }
 
     // Also sets this.slides
@@ -96,8 +98,8 @@ var Slides = Class.create({
     }
 
     this.slides.each(function(slide, index){
-      slide.item_index = index;
-      slide.id = 'slide_' + index;
+      slide.item_index = index
+      slide.id = 'slide_' + index
 
       if (has_thumbs) {
         // Insert new thumb based off slide
@@ -112,44 +114,44 @@ var Slides = Class.create({
       }
 
       // Also, all slides should be absolute (this isn't done in the css because initial page loads looks nicer this way)
-      slide.setStyle({position:'absolute'});
+      slide.setStyle({position:'absolute'})
   
       // First Slide
       if (!slide.previous()) {
         // Set current slide to this one
-        this.current_slide = slide;
+        this.current_slide = slide
         if (has_thumbs){
           // Set its thumb active
-          slide.thumb.addClassName('active');
-          slide.thumb.down('img').morph(this.options.thumb_active, this.options.thumb_morph_options);
+          slide.thumb.addClassName('active')
+          slide.thumb.down('img').morph(this.options.thumb_active, this.options.thumb_morph_options)
         }
   
       // Not first slide
       } else {
         // Hide all these slides since they're not the first
-        slide.setStyle({ display:'none' });	
+        slide.setStyle({ display:'none' })
       }
   
       // Last slide
       if (!slide.next()) {
         // Set next slide to the first one (so it wraps around)
-        slide.next_slide = slide.up().firstDescendant();
+        slide.next_slide = slide.up().firstDescendant()
 
       // Not last slide
       } else {
         // Set the next slide for the slideshow
-        slide.next_slide = slide.next();
+        slide.next_slide = slide.next()
       }
   
       if (has_thumbs){
         // Observe the click of each thumb
         slide.thumb.down('a').observe('click', function(e){
-          e.stop();
+          e.stop()
           // Turn off the slideshow loop
-          this.looping = false;
+          this.looping = false
           // Activate the chosen slide
-          this.activate(slide);
-        }.bind(this));
+          this.activate(slide)
+        }.bind(this))
 
         // Observe the mouseover of each thumb
         slide.thumb.down('a').observe('mouseover', function(e){
@@ -165,7 +167,7 @@ var Slides = Class.create({
         }.bind(this))
       }
 
-    }.bind(this));	
+    }.bind(this))
 
     return true
   },
@@ -175,60 +177,72 @@ var Slides = Class.create({
     var has_thumbs = this.has_thumbs 
 
     // Ensure a different slide was chosen
-    if (this.current_slide.id == next_slide.id) { return false; }
+    if (this.current_slide.id == next_slide.id) { return false }
 
     // Don't start a new animation if there is currently one happening
-    if (this.animating) { return false; }
-    this.animating = true;
+    if (this.animating) { return false }
+    this.animating = true
+
+    // Hook before slide transition
+    this.options.before_transition(this.current_slide,this.current_slide.next_slide)
 
     // Fade out the current slide and deactivate its thumb
     if (has_thumbs){
-      this.current_slide.thumb.removeClassName('active');
-      this.current_slide.thumb.down('img').morph(this.options.thumb_inactive, this.options.thumb_morph_options);
+      this.current_slide.thumb.removeClassName('active')
+      this.current_slide.thumb.down('img').morph(this.options.thumb_inactive, this.options.thumb_morph_options)
     }
-    Effect.Fade(this.current_slide);
+    Effect.Fade(this.current_slide)
 
     // Appear the new slide and activate its thumb
     if (has_thumbs){
-      next_slide.thumb.addClassName('active');
-      next_slide.thumb.down('img').morph(this.options.thumb_active, this.options.thumb_morph_options);
+      next_slide.thumb.addClassName('active')
+      next_slide.thumb.down('img').morph(this.options.thumb_active, this.options.thumb_morph_options)
     }
-    Effect.Appear(next_slide, { afterFinish:function(){
-      this.animating = false;
-    }.bind(this)});
+    Effect.Appear(next_slide, { afterFinish:function(){                
+      this.animating = false
+      
+      // Hook after slide transition
+      this.options.after_transition(this.current_slide,this.current_slide.next_slide)
+    }.bind(this)})
 
     // Update what the current slide is
-    this.current_slide = next_slide;
+    this.current_slide = next_slide
   },
 
   loop: function() {
     var has_thumbs = this.has_thumbs 
     
     // If looping is turned off, get out of here
-    if (!this.looping) { return false; }
-    this.animating = true;
+    if (!this.looping) { return false }
+    this.animating = true
+
+    // Hook before slide transition
+    this.options.before_transition(this.current_slide,this.current_slide.next_slide)
 
     // Fade out the current slide and deactivate its thumb
     if (has_thumbs){
-      this.current_slide.thumb.removeClassName('active');
-      this.current_slide.thumb.down('img').morph(this.options.thumb_inactive, this.options.thumb_morph_options);
+      this.current_slide.thumb.removeClassName('active')
+      this.current_slide.thumb.down('img').morph(this.options.thumb_inactive, this.options.thumb_morph_options)
     }
-    Effect.Fade(this.current_slide);
+    Effect.Fade(this.current_slide)
 
     // Appear the new slide and activate its thumb
     if (has_thumbs){
-      this.current_slide.next_slide.thumb.addClassName('active');
-      this.current_slide.next_slide.thumb.down('img').morph(this.options.thumb_active, this.options.thumb_morph_options);
+      this.current_slide.next_slide.thumb.addClassName('active')
+      this.current_slide.next_slide.thumb.down('img').morph(this.options.thumb_active, this.options.thumb_morph_options)
     }
     Effect.Appear(this.current_slide.next_slide, { afterFinish:function(){
-      this.animating = false;
-    }.bind(this)});
+      this.animating = false
+      
+      // Hook after slide transition
+      this.options.after_transition(this.current_slide,this.current_slide.next_slide)
+    }.bind(this)})
 
     // Update what the current slide is
-    this.current_slide = this.current_slide.next_slide;
+    this.current_slide = this.current_slide.next_slide
 
     // Do it all again
-    setTimeout(this.loop.bind(this),this.options.delay);
+    setTimeout(this.loop.bind(this),this.options.delay)
   }
 
 })
